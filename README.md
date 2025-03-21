@@ -21,8 +21,8 @@ A simple Rust-based tool that converts images into ASCII art, supporting graysca
 
 ### Clone the Repository
 ```sh
- git clone https://github.com/yourusername/rust-ascii-image-generator.git
- cd rust-ascii-image-generator
+ git clone https://github.com/FrancoChSa28/ascii_image.git
+ cd ascii_image
 ```
 
 ### Build the Project
@@ -53,5 +53,5 @@ Pull requests and improvements are welcome! Feel free to open an issue for featu
 
 ## Author
 **Your Name**  
-GitHub: [yourusername](https://github.com/yourusername)
+GitHub: [FrancoChSa28](https://github.com/FrancoChSa28)
 
