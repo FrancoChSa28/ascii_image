@@ -44,6 +44,7 @@ This will generate and display the ASCII art in a explorer windows. Also it will
 | `--input <FILE>` | Path to image |
 | `--width <N>` | Sets the output width (default: 100) |
 | `--contrast <N>` | Sets the output contrast (default: 10) |
+| `--color` | Sets the output color (default: false (grayscale) ) |
 
 ## License
 This project is licensed under the MIT License.
