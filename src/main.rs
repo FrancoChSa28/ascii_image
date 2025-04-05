@@ -62,7 +62,6 @@ fn main() {
     
 
     // Save and open the ASCII art image.
-    
     open::that("ascii_art.png").expect("Error opening image 'ascii_art.png'");
 
 }
@@ -89,22 +88,27 @@ where
     T: Pixel<Subpixel = u8> + 'static, // Ensure pixel type has u8 subpixels and is static
     ImageBuffer<T, Vec<u8>>: GenericImageView<Pixel = T>, // Ensure it supports get_pixel
 {
+    // Create an empty image base on width and height
     let mut ascii_img = RgbImage::new(width as u32 * 8, height * 16);
+    // Load font from file
     let font = include_bytes!("../simple-8x16.font");
+    // Define width and height's font
     let font_width = 8;
     let font_height = 16;
 
     for y in 0..height {
         for x in 0..width {
+            // Go thought every pixel
             let pixel = img.get_pixel(x as u32, y);
+            // Get the color and brightness
             let (brightness, color) = process_pixel(pixel);
-
+            // Define character to be used
             let k = (brightness as f64 / 256.0 * n as f64).floor() as usize;
             let character = density.chars().nth((n - 1 - (k as i32)) as usize).unwrap_or(' ');
-
+            // Define position to be printed
             let x_offset = x * 8;
             let y_offset = y * 16;
-
+            // Print character depending some params
             draw_character(
                 &mut ascii_img,
                 character,
@@ -166,86 +170,6 @@ fn ascii_color(img_name: &str, width: i32, density: &str, n: i32) {
         &img
     );
 }
-
-// fn ascii_black_and_white(img_name: &str, width: i32, density: &str, n: i32) {
-//     // Read the image and convert it to grayscale.
-//     let mut img: ImageBuffer<Luma<u8>, Vec<u8>> = open(img_name).unwrap().to_luma8();
-//     let height = get_height(&mut img, width);
-//     let img = imageops::resize(&img, width as u32, height, image::imageops::FilterType::Lanczos3);
-
-//     // Print some information about the image.
-//     // println!("Image: {}x{} -> {}x{}", orig_width, orig_height, width, height);
-
-//     // Save the grayscale image.
-//     img.save("grayscale.png").expect("Error saving grayscale image");
-    
-//     // Create a new RGB image to store the ASCII art.
-//     let mut ascii_img = RgbImage::new(width as u32 * 8, height * 16);
-//     let font = include_bytes!("../simple-8x16.font");
-//     let font_width = 8;
-//     let font_height = 16;
-
-//     // Map pixel brightness to ASCII characters.
-//     for y in 0..height {
-//         for x in 0..width {
-//             let p = img.get_pixel(x as u32, y).0[0] as i32;
-//             let k = (p as f64 / 256.0 * n as f64).floor() as usize;
-
-//             let character = density.chars().nth((n - 1 - (k as i32) ) as usize).unwrap_or_else(|| ' ');
-
-//             // Print p, k, character
-//             // println!("y: {} \tx: {} \tp: {} \tk: {} \tchar: {} \tn: {}", y, x, p, k, character, n);
-            
-//             // print!("{}", character);
-
-//             let x_offset = x * 8; // Each character occupies 8 pixels horizontally
-//             let y_offset = y * 16; // Each character occupies 16 pixels vertically
-//             draw_character(&mut ascii_img, character, font, font_width, font_height, x_offset as u32, y_offset, false, Rgb([0, 0, 0]));
-//         }
-//     }
-
-//     // Save the ASCII art image.
-//     ascii_img.save("ascii_art.png").expect("Error saving image 'ascii_art.png'");
-//     println!("Image saved successfully");
-// }
-
-// fn ascii_color(img_name: &str, width: i32, density: &str, n: i32) {
-//     let mut img: ImageBuffer<Rgb<u8>, Vec<u8>> = open(img_name).unwrap().to_rgb8(); // Read as color image
-//     let height = get_height(&mut img, width);
-//     let img = imageops::resize(&img, width as u32, height, image::imageops::FilterType::Lanczos3);
-
-//     // Save the grayscale image.
-//     img.save("colored.png").expect("Error saving grayscale image");
-
-//     // Create a new RGB image to store the ASCII art.
-//     let mut ascii_img = RgbImage::new(width as u32 * 8, height * 16);
-//     let font = include_bytes!("../simple-8x16.font");
-//     let font_width = 8;
-//     let font_height = 16;
-
-//     for y in 0..height {
-//         for x in 0..width {
-//             let pixel = img.get_pixel(x as u32, y);
-//             let (r, g, b) = (pixel[0], pixel[1], pixel[2]);
-    
-//             let brightness = (0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) as u8; // Perceived brightness
-//             let k = (brightness as f64 / 256.0 * n as f64).floor() as usize;
-//             let character = density.chars().nth((n - 1 - (k as i32) ) as usize).unwrap_or(' ');
-    
-//             let x_offset = x * 8;
-//             let y_offset = y * 16;
-
-//             // print rgb
-//             // println!("y: {} \tx: {} \tr: {} \tg: {} \tb: {} \tchar: {} \tn: {}", y, x, r, g, b, character, n);
-
-//             draw_character(&mut ascii_img, character, font, font_width, font_height, x_offset as u32, y_offset, true, Rgb([r, g, b]));
-//         }
-//     }
-
-//     // Save the ASCII art image.
-//     ascii_img.save("ascii_art.png").expect("Error saving image 'ascii_art.png'");
-//     println!("Image saved successfully");
-// }
 
 // Function to draw a character onto the image
 fn draw_character(image: &mut RgbImage, character: char, font: &[u8], font_width: u32, font_height: u32, x_offset: u32, y_offset: u32, colored: bool, color: Rgb<u8>) {
