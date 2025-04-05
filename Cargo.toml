@@ -9,3 +9,6 @@ edition = "2021"
 image = "0.23.14"
 open = "3"
 clap = { version = "4", features = ["derive"] }
+
+[dev-dependencies]
+assert_cmd = "2.0"

@@ -1,5 +1,5 @@
 use std::fs;
-use image::{imageops, open, GenericImageView, ImageBuffer, Luma, Pixel, Rgb, RgbImage};
+use ascii_image::ascii::{ascii_black_and_white, ascii_color};
 use clap::{self, command, Parser};
 
 #[derive(Parser, Debug)]
@@ -19,9 +19,12 @@ struct Args {
 
     /// Enable ANSI color output (default: false)
     #[arg(long, default_value_t = false)]
-    color: bool
-}
+    color: bool,
 
+    /// Open the generated ASCII art image (default: false)
+    #[arg(long, default_value_t = false)]
+    open: bool,
+}
 
 fn main() {
     // env::set_var("RUST_BACKTRACE", "full");
@@ -30,6 +33,7 @@ fn main() {
     let (width, contrast) = (args.width as i32, args.contrast as i32);
     let img_name = args.input.as_str();
     let color = args.color;
+    let open = args.open;
 
     // Check inputs
     fs::metadata(img_name).expect("File not found");
@@ -59,147 +63,8 @@ fn main() {
         }
     }
 
-    
-
-    // Save and open the ASCII art image.
-    open::that("ascii_art.png").expect("Error opening image 'ascii_art.png'");
-
-}
-
-fn get_height<T>(img: &ImageBuffer<T, Vec<u8>>, width: i32) -> u32
-where
-    T: Pixel<Subpixel = u8> + 'static,
-{
-    let (orig_width, orig_height) = img.dimensions();
-    let r = orig_height as f64 / orig_width as f64;
-    (width as f64 * r * 0.5) as u32
-}
-
-// Generic function for both grayscale and color images
-fn ascii_image<T>(
-    height: u32,
-    width: i32,
-    density: &str,
-    n: i32,
-    process_pixel: impl Fn(&T) -> (u8, Rgb<u8>),
-    img: &ImageBuffer<T, Vec<u8>>,
-)
-where
-    T: Pixel<Subpixel = u8> + 'static, // Ensure pixel type has u8 subpixels and is static
-    ImageBuffer<T, Vec<u8>>: GenericImageView<Pixel = T>, // Ensure it supports get_pixel
-{
-    // Create an empty image base on width and height
-    let mut ascii_img = RgbImage::new(width as u32 * 8, height * 16);
-    // Load font from file
-    let font = include_bytes!("../simple-8x16.font");
-    // Define width and height's font
-    let font_width = 8;
-    let font_height = 16;
-
-    for y in 0..height {
-        for x in 0..width {
-            // Go thought every pixel
-            let pixel = img.get_pixel(x as u32, y);
-            // Get the color and brightness
-            let (brightness, color) = process_pixel(pixel);
-            // Define character to be used
-            let k = (brightness as f64 / 256.0 * n as f64).floor() as usize;
-            let character = density.chars().nth((n - 1 - (k as i32)) as usize).unwrap_or(' ');
-            // Define position to be printed
-            let x_offset = x * 8;
-            let y_offset = y * 16;
-            // Print character depending some params
-            draw_character(
-                &mut ascii_img,
-                character,
-                font,
-                font_width,
-                font_height,
-                x_offset as u32,
-                y_offset,
-                color != Rgb([0, 0, 0]),
-                color,
-            );
-        }
-    }
-
-    ascii_img.save("ascii_art.png").expect("Error saving ASCII image");
-    println!("Image saved successfully");
-}
-
-// Grayscale processing function
-fn ascii_black_and_white(img_name: &str, width: i32, density: &str, n: i32) {
-    // Read the image and convert it to grayscale.
-    let mut img: ImageBuffer<Luma<u8>, Vec<u8>> = open(img_name).unwrap().to_luma8();
-    let height = get_height(&mut img, width);
-    let img = imageops::resize(&img, width as u32, height, image::imageops::FilterType::Lanczos3);
-
-    // Save the grayscale image.
-    img.save("grayscale.png").expect("Error saving grayscale image");
-
-    ascii_image::<Luma<u8>>(
-        height,
-        width,
-        density,
-        n,
-        |pixel| (pixel[0], Rgb([0, 0, 0])),  // Grayscale brightnessm
-        &img
-    );
-}
-
-// Color processing function
-fn ascii_color(img_name: &str, width: i32, density: &str, n: i32) {
-    // Read the image and convert it to grayscale.
-    let mut img: ImageBuffer<Rgb<u8>, Vec<u8>> = open(img_name).unwrap().to_rgb8();
-    let height = get_height(&mut img, width);
-    let img = imageops::resize(&img, width as u32, height, image::imageops::FilterType::Lanczos3);
-
-    // Save the grayscale image.
-    img.save("colored.png").expect("Error saving colored image");
-
-    ascii_image::<Rgb<u8>>(
-        height,
-        width,
-        density,
-        n,
-        |pixel| {
-            let (r, g, b) = (pixel[0], pixel[1], pixel[2]);
-            let brightness = (0.299 * r as f32 + 0.587 * g as f32 + 0.114 * b as f32) as u8;
-            (brightness, Rgb([r, g, b]))  // Return brightness + RGB color
-        },
-        &img
-    );
-}
-
-// Function to draw a character onto the image
-fn draw_character(image: &mut RgbImage, character: char, font: &[u8], font_width: u32, font_height: u32, x_offset: u32, y_offset: u32, colored: bool, color: Rgb<u8>) {
-    // Map the ASCII character to its corresponding position in the font
-    let index = (character as usize) * (font_height as usize);
-    // println!("Index: {}", index);
-    // Draw the character onto the image
-    for y in 0..font_height {
-        for x in 0..font_width {
-            // println!("\tX: {}, Y: {}", x, y);
-            let pixel = font[index + y as usize] & (1 << (font_width - 1 - x));
-            // println!("\tPixel: {}", pixel);
-            let pixel_color = match colored {
-                true => {
-                    if pixel != 0 {
-                        Rgb([color[0], color[1], color[2]]) // Use the specified color for the pixel
-                    } else {
-                        Rgb([255, 255, 255]) // White background
-                    }
-                },
-                false => {
-                    if pixel != 0 { Rgb([0, 0, 0]) } else { Rgb([255, 255, 255]) } // Black or white based on font pixel
-                }
-                
-            };
-            // let pixel_color = if pixel != 0 { Rgb([0, 0, 0]) } else { Rgb([255, 255, 255]) }; // Black or white based on font pixel
-            // println!("\tPixel Color: {:?}", pixel_color);
-            // println!("\tX Offset: {}, Y Offset: {}", x_offset + x as u32, y_offset + y as u32);
-            // println!("\tDimensions: {:?}", image.dimensions());
-            image.put_pixel(x_offset + x as u32, y_offset + y as u32, pixel_color);
-        }
+    if open {
+        // Open the generated ASCII art image.
+        open::that("ascii_art.png").expect("Error opening image 'ascii_art.png'");
     }
 }
